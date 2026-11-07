@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador EDO: Adopción de Mascotas</title>
+    <!-- Tailwind CSS para los estilos -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js para las gráficas -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .table-container { max-height: 400px; overflow-y: auto; }
+        /* Estilos personalizados para la tabla */
+        th { position: sticky; top: 0; background-color: #f3f4f6; z-index: 10; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased">
+
+    <!-- Encabezado con datos del estudiante -->
+    <header class="bg-indigo-700 text-white py-6 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h1 class="text-3xl font-bold tracking-tight">Desafío: Modelado con Ecuaciones Diferenciales</h1>
+            <div class="mt-3 flex flex-col sm:flex-row sm:items-center justify-between">
+                <div>
+                    <p class="text-lg font-medium text-indigo-100">Estudiante: <span class="text-white font-semibold">Pabel Dante Churata Apaza</span></p>
+                    <p class="text-indigo-200">CI: <span class="text-white">9230639</span></p>
+                </div>
+                <div class="mt-2 sm:mt-0 bg-indigo-800 px-4 py-2 rounded-lg border border-indigo-600 shadow-sm">
+                    <p class="text-sm font-medium text-indigo-100">Mención:</p>
+                    <p class="text-base text-white font-semibold">Desarrollo de Software e Innovación</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        
+        <!-- Contexto del Problema -->
+        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h2 class="text-2xl font-bold text-slate-800 mb-4 border-b pb-2">El Problema: Bienestar Animal y Refugios</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <p class="text-slate-600 mb-3 text-justify">
+                        En muchas comunidades, los refugios de animales enfrentan problemas de sobrepoblación. Este modelo busca simular la <strong>disminución de la población de mascotas en un refugio</strong> gracias a campañas de adopción intensivas.
+                    </p>
+                    <p class="text-slate-600 text-justify">
+                        <strong>Pregunta del desafío:</strong> ¿A qué ritmo se vaciará el refugio dado un esfuerzo constante de adopción, y qué tan precisas son nuestras simulaciones numéricas para predecir cuándo se alcanzará la meta?
+                    </p>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-lg border border-slate-100">
+                    <h3 class="font-semibold text-indigo-700 mb-2">Modelo Matemático (EDO)</h3>
+                    <p class="font-mono text-sm bg-white p-2 rounded border text-center mb-2">dP/dt = -k · P</p>
+                    <ul class="text-sm text-slate-600 space-y-1 list-disc list-inside">
+                        <li><strong>P (Variable Dependiente):</strong> Número de mascotas en el refugio.</li>
+                        <li><strong>t (Variable Independiente):</strong> Tiempo en días.</li>
+                        <li><strong>k (Parámetro):</strong> Tasa de adopción diaria (proporcional a la población).</li>
+                        <li><strong>P(0):</strong> Población inicial de mascotas.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Panel de Configuración -->
+            <section class="lg:col-span-1 space-y-6">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <h2 class="text-xl font-bold text-slate-800 mb-4">Parámetros de Simulación</h2>
+                    
+                    <form id="simForm" class="space-y-4">
+                        <!-- Error Message Container -->
+                        <div id="errorMsg" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative text-sm" role="alert">
+                            <span class="block sm:inline" id="errorText"></span>
+                        </div>
+
+                        <div>
+                            <label for="p0" class="block text-sm font-medium text-slate-700">Mascotas Iniciales, P(0)</label>
+                            <div class="mt-1 relative rounded-md shadow-sm">
+                                <input type="number" id="p0" value="100" min="1" step="1" required class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-3 pr-12 sm:text-sm border-gray-300 rounded-md py-2 border" placeholder="Ej: 100">
+                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                    <span class="text-slate-400 sm:text-sm">mascotas</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="k" class="block text-sm font-medium text-slate-700">Tasa de Adopción, k</label>
+                            <div class="mt-1 relative rounded-md shadow-sm">
+                                <input type="number" id="k" value="0.1" min="0.001" step="0.01" required class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-3 pr-12 sm:text-sm border-gray-300 rounded-md py-2 border" placeholder="Ej: 0.1">
+                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                    <span class="text-slate-400 sm:text-sm">1/días</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="h" class="block text-sm font-medium text-slate-700">Tamaño de Paso, h</label>
+                            <div class="mt-1 relative rounded-md shadow-sm">
+                                <input type="number" id="h" value="2" min="0.01" step="0.1" required class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-3 pr-12 sm:text-sm border-gray-300 rounded-md py-2 border" placeholder="Ej: 2">
+                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                    <span class="text-slate-400 sm:text-sm">días</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="t" class="block text-sm font-medium text-slate-700">Tiempo Total, t</label>
+                            <div class="mt-1 relative rounded-md shadow-sm">
+                                <input type="number" id="t" value="30" min="1" step="1" required class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-3 pr-12 sm:text-sm border-gray-300 rounded-md py-2 border" placeholder="Ej: 30">
+                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                    <span class="text-slate-400 sm:text-sm">días</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                            Ejecutar Simulación
+                        </button>
+                    </form>
+                </div>
+
+                <div class="bg-indigo-50 rounded-xl shadow-sm border border-indigo-100 p-6">
+                    <h3 class="text-lg font-semibold text-indigo-800 mb-2">Interpretación</h3>
+                    <p class="text-sm text-indigo-900 mb-3" id="interpretacionTexto">
+                        Ejecute la simulación para ver la interpretación de los resultados.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Panel de Resultados (Gráfica y Tabla) -->
+            <section class="lg:col-span-2 space-y-6">
+                <!-- Gráfica -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <h2 class="text-xl font-bold text-slate-800 mb-4">Gráfica de Soluciones</h2>
+                    <div class="relative h-[350px] w-full">
+                        <canvas id="resultadosChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Tabla -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <h2 class="text-xl font-bold text-slate-800 mb-4">Tabla Comparativa</h2>
+                    <div class="table-container rounded-lg border border-slate-200">
+                        <table class="min-w-full divide-y divide-slate-200 text-sm text-right">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Tiempo (días)</th>
+                                    <th scope="col" class="px-3 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Analítica</th>
+                                    <th scope="col" class="px-3 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Heun (RK2)</th>
+                                    <th scope="col" class="px-3 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">RK4</th>
+                                    <th scope="col" class="px-3 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Err. Abs Heun</th>
+                                    <th scope="col" class="px-3 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Err. Rel Heun (%)</th>
+                                    <th scope="col" class="px-3 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Err. Abs RK4</th>
+                                    <th scope="col" class="px-3 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Err. Rel RK4 (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaResultados" class="bg-white divide-y divide-slate-200">
+                                <!-- Resultados generados por JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        // Referencia a la gráfica de Chart.js
+        let chartInstance = null;
+
+        // Función de la EDO: f(t, P) = dP/dt = -k * P
+        const f = (t, P, k) => -k * P;
+
+        // Solución Analítica: P(t) = P(0) * e^(-kt)
+        const solucionAnalitica = (t, P0, k) => P0 * Math.exp(-k * t);
+
+        // Algoritmo de Heun (RK2)
+        const pasoHeun = (t, P, h, k) => {
+            const k1 = f(t, P, k);
+            const k2 = f(t + h, P + h * k1, k);
+            return P + (h / 2) * (k1 + k2);
+        };
+
+        // Algoritmo Runge-Kutta de 4to Orden (RK4)
+        const pasoRK4 = (t, P, h, k) => {
+            const k1 = f(t, P, k);
+            const k2 = f(t + h / 2, P + (h / 2) * k1, k);
+            const k3 = f(t + h / 2, P + (h / 2) * k2, k);
+            const k4 = f(t + h, P + h * k3, k);
+            return P + (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4);
+        };
+
+        // Cálculo del Error Relativo Porcentual
+        const errRelPorcentual = (exacto, aprox) => {
+            if (exacto === 0) return 0; // Evitar división por cero
+            return Math.abs((exacto - aprox) / exacto) * 100;
+        };
+
+        // Formateador de números para la tabla
+        const fmt = (num) => Number(num.toFixed(4));
+
+        document.getElementById('simForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const errorBox = document.getElementById('errorMsg');
+            const errorText = document.getElementById('errorText');
+            errorBox.classList.add('hidden');
+
+            // Leer valores de entrada
+            const P0 = parseFloat(document.getElementById('p0').value);
+            const k = parseFloat(document.getElementById('k').value);
+            const h = parseFloat(document.getElementById('h').value);
+            const tTotal = parseFloat(document.getElementById('t').value);
+
+            // Validaciones básicas
+            if (P0 <= 0 || k <= 0 || h <= 0 || tTotal <= 0) {
+                errorText.innerText = "Todos los valores deben ser mayores a cero.";
+                errorBox.classList.remove('hidden');
+                return;
+            }
+            if (h > tTotal) {
+                errorText.innerText = "El tamaño de paso (h) no puede ser mayor que el tiempo total (t).";
+                errorBox.classList.remove('hidden');
+                return;
+            }
+
+            // Inicializar arreglos para resultados
+            let tiempos = [];
+            let analitica = [];
+            let heun = [];
+            let rk4 = [];
+            let datosTabla = [];
+
+            // Condiciones iniciales
+            let t = 0;
+            let P_heun = P0;
+            let P_rk4 = P0;
+
+            // Bucle de iteración
+            let maxIter = Math.ceil(tTotal / h) + 1;
+            // Prevención de cuelgues (límite de 10,000 iteraciones)
+            if(maxIter > 10000) {
+                errorText.innerText = "El paso es demasiado pequeño para el tiempo total, provocará sobrecarga.";
+                errorBox.classList.remove('hidden');
+                return;
+            }
+
+            while (t <= tTotal + (h * 0.0001)) { // Margen de error por coma flotante
+                let P_exacta = solucionAnalitica(t, P0, k);
+
+                // Guardar para gráfica
+                tiempos.push(t.toFixed(1));
+                analitica.push(P_exacta);
+                heun.push(P_heun);
+                rk4.push(P_rk4);
+
+                // Errores
+                let errAbsHeun = Math.abs(P_exacta - P_heun);
+                let errRelHeun = errRelPorcentual(P_exacta, P_heun);
+                
+                let errAbsRk4 = Math.abs(P_exacta - P_rk4);
+                let errRelRk4 = errRelPorcentual(P_exacta, P_rk4);
+
+                // Guardar para tabla
+                datosTabla.push({
+                    t: t,
+                    exacta: P_exacta,
+                    heun: P_heun,
+                    rk4: P_rk4,
+                    eAbsH: errAbsHeun,
+                    eRelH: errRelHeun,
+                    eAbsRK: errAbsRk4,
+                    eRelRK: errRelRk4
+                });
+
+                // Calcular siguiente iteración
+                P_heun = pasoHeun(t, P_heun, h, k);
+                P_rk4 = pasoRK4(t, P_rk4, h, k);
+                t += h;
+            }
+
+            actualizarGrafica(tiempos, analitica, heun, rk4);
+            actualizarTabla(datosTabla);
+            actualizarInterpretacion(P0, k, tTotal, analitica[analitica.length-1], datosTabla[datosTabla.length-1]);
+        });
+
+        function actualizarGrafica(tiempos, analitica, heun, rk4) {
+            const ctx = document.getElementById('resultadosChart').getContext('2d');
+            
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: tiempos,
+                    datasets: [
+                        {
+                            label: 'Analítica',
+                            data: analitica,
+                            borderColor: '#10b981', // Emerald
+                            backgroundColor: 'transparent',
+                            borderWidth: 3,
+                            pointRadius: 0,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Heun (RK2)',
+                            data: heun,
+                            borderColor: '#f59e0b', // Amber
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 3
+                        },
+                        {
+                            label: 'RK4',
+                            data: rk4,
+                            borderColor: '#3b82f6', // Blue
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            borderDash: [2, 2],
+                            pointRadius: 3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + ' mascotas';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Tiempo (Días)' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Población (Mascotas)' },
+                            min: 0
+                        }
+                    }
+                }
+            });
+        }
+
+        function actualizarTabla(datos) {
+            const tbody = document.getElementById('tablaResultados');
+            tbody.innerHTML = ''; // Limpiar
+
+            datos.forEach((fila, index) => {
+                const tr = document.createElement('tr');
+                // Colorear filas alternas
+                if(index % 2 !== 0) tr.classList.add('bg-slate-50/50');
+                else tr.classList.add('bg-white');
+
+                tr.innerHTML = `
+                    <td class="px-3 py-2 whitespace-nowrap text-left font-medium text-slate-900">${fmt(fila.t)}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-emerald-600 font-medium">${fmt(fila.exacta)}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-amber-600">${fmt(fila.heun)}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-blue-600">${fmt(fila.rk4)}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-slate-500">${fmt(fila.eAbsH)}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-slate-500">${fmt(fila.eRelH)}%</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-slate-500">${fmt(fila.eAbsRK)}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-slate-500">${fmt(fila.eRelRK)}%</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function actualizarInterpretacion(P0, k, t, finalExacta, ultimoDato) {
+            const container = document.getElementById('interpretacionTexto');
+            const mascotasRestantes = Math.round(finalExacta);
+            
+            let texto = `Comenzamos con <strong>${P0} mascotas</strong> en el refugio. Con una tasa de adopción de ${k} (aprox. ${k*100}% de la población restante adoptada por día), después de <strong>${t} días</strong>, se espera que queden aproximadamente <strong>${mascotasRestantes} mascotas</strong> según el modelo exacto. <br><br>`;
+            
+            texto += `<strong>Análisis Numérico:</strong> Al final de la simulación, el método RK4 tiene un error relativo de <strong>${fmt(ultimoDato.eRelRK)}%</strong>, comparado con el <strong>${fmt(ultimoDato.eRelH)}%</strong> del método de Heun. `;
+            
+            if (ultimoDato.eRelRK < ultimoDato.eRelH) {
+                texto += `Como se esperaba, <strong>Runge-Kutta de 4º orden (RK4) demuestra ser significativamente más preciso</strong>, acercándose mucho más a la curva analítica.`;
+            } else {
+                texto += `En este caso particular, ambos métodos se comportan de manera similar.`;
+            }
+
+            texto += `<br><br><strong>Conclusión para la Comunidad:</strong> Mantener esta campaña constante de adopción reduce significativamente la sobrepoblación. Sin embargo, el modelo tiene como limitación asumir que la tasa <em>k</em> es constante, cuando en la vida real depende del flujo de visitantes y factores externos.`;
+
+            container.innerHTML = texto;
+        }
+
+        // Ejecutar simulación inicial al cargar
+        window.onload = () => {
+            document.getElementById('simForm').dispatchEvent(new Event('submit'));
+        };
+    </script>
+</body>
+</html>
